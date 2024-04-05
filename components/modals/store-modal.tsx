@@ -5,6 +5,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { useRouter } from "next/navigation";
 import { useStoreModal } from "@/hooks/use-store-modal";
 import { Modal } from "../ui/modal";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -25,6 +26,7 @@ const formSchema = z.object({
 
 export const StoreModal = () => {
   const storeModal = useStoreModal();
+  const router = useRouter();
 
   const [loading, setLoading] = useState(false);
 
@@ -40,8 +42,12 @@ export const StoreModal = () => {
       setLoading(true);
 
       const response = await axios.post('/api/stores', values);
-
+      
       toast.success("Loja criada.");
+      window.location.reload();
+      storeModal.onClose();
+      router.push("/")
+      
       // console.log(response.data);   
     } catch (error) {
       //console.log(error);
@@ -81,7 +87,8 @@ export const StoreModal = () => {
               <div className="pt-6 space-x-2 flex items-center justify-end w-full">
                     <Button
                         disabled={loading} 
-                        variant="outline" 
+                        variant="outline"
+                        type="button"
                         onClick={storeModal.onClose}>
                             Cancelar
                         </Button>
