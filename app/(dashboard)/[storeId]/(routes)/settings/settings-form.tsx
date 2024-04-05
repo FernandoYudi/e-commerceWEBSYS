@@ -1,17 +1,23 @@
 "use client"
 
 import * as z from "zod";
+import axios from "axios";
+import toast from "react-hot-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Store } from "@prisma/client";
 import { Trash } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { useState } from "react";
+import { useParams, useRouter } from "next/navigation";
 
 import { Heading } from "@/components/ui/heading";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
-import { Form, FormField, FormItem, FormLabel } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { AlertModal } from "@/components/modals/alert-modal";
+
+
 
 
 
@@ -28,6 +34,9 @@ type SettingsFormValues = z.infer<typeof formSchema>;
 export const SettingsForm: React.FC<SettingsFromProps> = ({
     initialData
 }) => {
+    const params = useParams();
+    const router = useRouter();
+
     const [open, setOpen] = useState(false); 
     const [loading, setLoading] = useState(false); 
 
@@ -37,20 +46,51 @@ export const SettingsForm: React.FC<SettingsFromProps> = ({
     });
 
     const onSubmit = async (data: SettingsFormValues) => {
-        console.log(data);
+        try {
+            setLoading(true);
+            await axios.patch(`/api/stores/${params.storeId}`, data);
+            router.refresh();
+            toast.success("Loja Atualizada.");
+        } catch (error) {
+            toast.error("Algo deu errado.")
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    const onDelete = async () => {
+        try {
+            setLoading(true)
+            await axios.delete(`/api/stores/${params.storeId}`)
+            router.refresh();
+            router.push("/")
+            toast.success("Loja apagada.")
+        } catch (error){
+            toast.error("Tenha certeza de que todos os produtos e categorias foram removidos!")
+        } finally {
+            setLoading(false)
+            setOpen(false)
+        }
     }
 
     return (
         <>
+        <AlertModal
+            isOpen={open}
+            onClose={() => setOpen(false)}
+            onConfirm={onDelete}
+            loading={loading}
+        />
         <div className="flex items-center justify-between">
             <Heading
                 title="Configurações"
                 description="Gerenciar configurações da loja"
             />
             <Button
+            disabled={loading}
             variant="destructive"
             size="icon"
-            onClick={() => {}}
+            onClick={() => setOpen(true)}
             >
                 <Trash className="h-4 w-4"/>
             </Button>
@@ -65,12 +105,15 @@ export const SettingsForm: React.FC<SettingsFromProps> = ({
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Nome</FormLabel>
-                                <Input disabled={loading} placeholder="Nome da loja" {...field}/>
+                                <FormControl>
+                                    <Input disabled={loading} placeholder="Nome da loja" {...field}/>
+                                </FormControl>
+                                <FormMessage/>
                             </FormItem>
                         )}
                     />
                 </div>
-                <Button>
+                <Button disabled={loading} className="ml-auto" type="submit">
                     Salvar
                 </Button>
             </form>
